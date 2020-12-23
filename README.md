@@ -25,11 +25,15 @@
 - RaspberryPi 3 Model B+
 - Raspbian GNU/Linux 10 (buster)
 
+<br>
+
 --------------------------------------------------------
+
+<br>
 
 ## 수정
 
 #### 1. DateTime.Parse -> DateTime.ParseExact
     windows 에서는 정상적인 결과를 출력했는데 리눅스 환경에서 실행시키니  
     "System.FormatException: String '12/31' was not recognized as a valid DateTime."  
-    라는 DateTime Format 예외가 발생하여 `DateTime.ParseExact` 메서드로 변경해주었다.
+    라는 DateTime Format 예외가 발생하여 "DateTime.ParseExact" 메서드로 변경해주었다.
