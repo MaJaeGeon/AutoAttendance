@@ -9,8 +9,8 @@
 
 ## 사용 라이브러리
 ### Nuget Package
-- ![HtmlAgilityPack](https://html-agility-pack.net)  
-- ![Newtonsoft.Json](https://www.newtonsoft.com/json)
+- [HtmlAgilityPack](https://html-agility-pack.net)  
+- [Newtonsoft.Json](https://www.newtonsoft.com/json)
 
 <br>
 
