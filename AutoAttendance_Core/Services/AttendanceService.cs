@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -132,7 +133,7 @@ namespace AutoAttendance_Core.Services
                 string wr_id = urlQuery.GetValues(1)[0];
 
                 string nodeTitle = innerNode.SelectSingleNode("b").InnerText;
-                var datetime = DateTime.Parse(regex.Match(nodeTitle).Value);
+                var datetime = DateTime.ParseExact(regex.Match(nodeTitle).Value, "M/d", CultureInfo.InvariantCulture);
 
                 // 공지에있는 날짜가 현재 날짜보다 이전이라면 년도를 1씩 증가시킨다.
                 datetime = (DateTime.Compare(datetime, DateTime.Now) < 0) ? datetime.AddYears(1) : datetime;
