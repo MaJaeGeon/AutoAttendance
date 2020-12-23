@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AutoAttendance_Core.Models
 {
-    public class CommentModel
+    public class AttendanceDataModel
     {
         /// <summary>
         /// 출석체크할 게시판
@@ -17,13 +17,16 @@ namespace AutoAttendance_Core.Models
         public string wr_id { get; set; }
 
         /// <summary>
-        /// 출석체크 문구
-        /// </summary>
-        public string comment { get; set; }
-
-        /// <summary>
         /// 출석체크할 날짜
         /// </summary>
         public DateTime datetime { get; set; }
+    }
+
+    public class CommentModel : AttendanceDataModel
+    {
+        /// <summary>
+        /// 출석체크 문구
+        /// </summary>
+        public string comment { get; set; }
     }
 }

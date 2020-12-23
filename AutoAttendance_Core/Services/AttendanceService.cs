@@ -3,8 +3,10 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace AutoAttendance_Core.Services
@@ -12,7 +14,16 @@ namespace AutoAttendance_Core.Services
     public class AttendanceService
     {
         private CookieContainer cookieContainer = new CookieContainer();
+        private readonly string Id = null;
+        private readonly string Pw = null;
 
+        public AttendanceService(string id, string pw)
+        {
+            Id = HttpUtility.UrlEncode(id);
+            Pw = HttpUtility.UrlEncode(pw);
+        }
+
+        #region 출석체크 로직
 
         /// <summary>
         /// 출석체크 로직을 실행한다.
@@ -20,30 +31,26 @@ namespace AutoAttendance_Core.Services
         /// <param name="id">학과 홈페이지의 아이디</param>
         /// <param name="pw">학과 홈페이지의 비밀번호</param>
         /// <param name="postModel">출석체크정보</param>
-        public void Run(string id, string pw, CommentModel postModel)
+        public void Run(CommentModel postModel)
         {
+            login();
+
             if (postModel == null) // 출석체크정보 없음.
             {
                 Console.WriteLine("NULL PostModel");
                 return;
             }
 
-            if (login(id, pw)) // 로그인 실패
-            {
-                Console.WriteLine("로그인 실패");
-                return;
-            }
-
             string token = GetToken();
             if (string.IsNullOrEmpty(token)) // 토큰 받아오기 실패
             {
-                Console.WriteLine("토큰 실패");
+                Console.WriteLine("Token Failed");
                 return;
             }
 
             if (PostComment(token, postModel)) // 출석체크 실패
             {
-                Console.WriteLine("출석체크 실패");
+                Console.WriteLine("Attendance Failed");
                 return;
             }
 
@@ -57,16 +64,13 @@ namespace AutoAttendance_Core.Services
         /// <param name="id">학번</param>
         /// <param name="pw">비밀번호</param>
         /// <returns>로그인 실패시 true를 반환한다.</returns>
-        private bool login(string id, string pw)
+        public AttendanceService login()
         {
-            id = HttpUtility.UrlEncode(id);
-            pw = HttpUtility.UrlEncode(pw);
-
-            string data = $"url=https%253A%252F%252Fpolyin.top&mb_id={id}&mb_password={pw}";
+            string data = $"url=https%253A%252F%252Fpolyin.top&mb_id={Id}&mb_password={Pw}";
 
             string respText = HttpRequest("https://polyin.top/bbs/login_check.php", "https://polyin.top", data);
 
-            return respText.Contains("오류");
+            return string.IsNullOrEmpty(respText)? null : this;
         }
 
 
@@ -80,6 +84,8 @@ namespace AutoAttendance_Core.Services
         {
             string data = $"token={token}&w=c&bo_table={commentModel.bo_table}&wr_id={commentModel.wr_id}& is_good=0&wr_content={commentModel.comment}";
             string respText = HttpRequest("https://polyin.top/bbs/write_comment_update.php", null, data);
+
+            Console.WriteLine(respText);
 
             return respText.Contains("오류");
         }
@@ -97,6 +103,46 @@ namespace AutoAttendance_Core.Services
             return obj["token"].ToString();
         }
 
+        #endregion
+
+
+        /// <summary>
+        /// 학과게시판의 공지로부터 출석체크게시판을 가져온다.
+        /// </summary>
+        /// <param name="url">학과게시판 url</param>
+        /// <param name="hours">출석체크를할 시간</param>
+        /// <returns></returns>
+        public List<AttendanceDataModel> GetAttendanceData(string url, int[] hours)
+        {
+            string respText = HttpRequest(url);
+
+            var page = new HtmlAgilityPack.HtmlDocument();
+            page.LoadHtml(respText);
+
+            Regex regex = new Regex("[0-9]*/[0-9]*");
+
+            List<AttendanceDataModel> dataList = new List<AttendanceDataModel>();
+
+            foreach (var node in page.DocumentNode.SelectNodes("//li[@class='list-item bg-light']"))
+            {
+                var innerNode = node.SelectSingleNode("div[@class='wr-subject']").SelectSingleNode("a[@class='item-subject']");
+
+                var urlQuery = HttpUtility.ParseQueryString(innerNode.Attributes["href"].Value);
+                string bo_table = urlQuery.GetValues(0)[0];
+                string wr_id = urlQuery.GetValues(1)[0];
+
+                string nodeTitle = innerNode.SelectSingleNode("b").InnerText;
+                var datetime = DateTime.Parse(regex.Match(nodeTitle).Value);
+
+                // 공지에있는 날짜가 현재 날짜보다 이전이라면 년도를 1씩 증가시킨다.
+                datetime = (DateTime.Compare(datetime, DateTime.Now) < 0) ? datetime.AddYears(1) : datetime;
+                
+                // 지정된 시간을 추가한다.
+                foreach (int hour in hours) dataList.Add(new AttendanceDataModel { bo_table = bo_table, wr_id = wr_id, datetime = datetime.AddHours(hour) });                
+            }
+
+            return dataList;
+        }
 
 
         /// <summary>
@@ -106,7 +152,7 @@ namespace AutoAttendance_Core.Services
         /// <param name="referer">Request의 referer값</param>
         /// <param name="data">Request에 함께 보낼 data</param>
         /// <returns></returns>
-        private string HttpRequest(string url, string referer = null, string data = null)
+        public string HttpRequest(string url, string referer = null, string data = null)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = WebRequestMethods.Http.Get;
