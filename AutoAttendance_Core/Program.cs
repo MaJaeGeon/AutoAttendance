@@ -11,11 +11,16 @@ namespace AutoAttendance_Core
     {
         static void Main(string[] args)
         {
+            string id = "id";
+            string pw = "pw";
+            string comment = "";
+
             #region 서비스 준비
 
-            AttendanceService service = new AttendanceService("id", "password").login();
+            AttendanceService service = new AttendanceService(id, pw).login();
 
             var attendanceData2 = service.GetAttendanceData("https://polyin.top/bbs/board.php?bo_table=bbs_202002_04", new int[] { 9, 14 });
+
 
             // 데이터 정렬
             attendanceData2.Sort(delegate (AttendanceDataModel A, AttendanceDataModel B)
@@ -48,7 +53,7 @@ namespace AutoAttendance_Core
                         bo_table = attendanceData[0].bo_table,
                         wr_id = attendanceData[0].wr_id,
                         datetime = attendanceData[0].datetime,
-                        comment = "Comment"
+                        comment = comment
                     });
 
                     attendanceData.RemoveAt(0);
@@ -66,9 +71,15 @@ namespace AutoAttendance_Core
                 {
                     case "show":
                         if (attendanceData.Count > 0)
-                            foreach (var i in attendanceData)
-                                Console.WriteLine($"Queue : {i.bo_table}, {i.wr_id}, {i.datetime}");
+                        {
+                            Console.WriteLine("Queue Count : " + attendanceData.Count);
+                            foreach (var i in attendanceData) Console.WriteLine($"Queue : {i.bo_table}, {i.wr_id}, {i.datetime}");
+                        }
                         else Console.WriteLine("You have completed all attendance.");
+                        break;
+
+                    case "stop":
+                        Environment.Exit(0);
                         break;
 
                     default:

@@ -37,8 +37,16 @@
 
 <br>
 
-## 수정
+## 업데이트
 
+### 2020-12-24
+#### 1. 년도 변경로직 수정
+    출석시간이 현재시간보다 과거인 경우 해당시간의 년도를 1씩  
+    증가시켜주는 로직의 버그를 수정했다.
+
+#### 2. 프로그램 종료 명령어 추가
+
+### 2020-12-23
 #### 1. DateTime.Parse -> DateTime.ParseExact
     windows 에서는 정상적인 결과를 출력했는데 리눅스 환경에서 실행시키니  
     "System.FormatException: String '12/31' was not recognized as a valid DateTime."  

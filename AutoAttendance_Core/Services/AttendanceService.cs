@@ -38,24 +38,24 @@ namespace AutoAttendance_Core.Services
 
             if (postModel == null) // 출석체크정보 없음.
             {
-                Console.WriteLine("NULL PostModel");
+                PrintLog("NULL PostModel");
                 return;
             }
 
             string token = GetToken();
             if (string.IsNullOrEmpty(token)) // 토큰 받아오기 실패
             {
-                Console.WriteLine("Token Failed");
+                PrintLog("Token Failed");
                 return;
             }
 
             if (PostComment(token, postModel)) // 출석체크 실패
             {
-                Console.WriteLine("Attendance Failed");
+                PrintLog("Attendance Failed");
                 return;
             }
 
-            Console.WriteLine("Attendance Success");
+            PrintLog("Attendance Success");
         }
 
 
@@ -85,8 +85,6 @@ namespace AutoAttendance_Core.Services
         {
             string data = $"token={token}&w=c&bo_table={commentModel.bo_table}&wr_id={commentModel.wr_id}& is_good=0&wr_content={commentModel.comment}";
             string respText = HttpRequest("https://polyin.top/bbs/write_comment_update.php", null, data);
-
-            Console.WriteLine(respText);
 
             return respText.Contains("오류");
         }
@@ -135,11 +133,20 @@ namespace AutoAttendance_Core.Services
                 string nodeTitle = innerNode.SelectSingleNode("b").InnerText;
                 var datetime = DateTime.ParseExact(regex.Match(nodeTitle).Value, "M/d", CultureInfo.InvariantCulture);
 
-                // 공지에있는 날짜가 현재 날짜보다 이전이라면 년도를 1씩 증가시킨다.
-                datetime = (DateTime.Compare(datetime, DateTime.Now) < 0) ? datetime.AddYears(1) : datetime;
-                
+
                 // 지정된 시간을 추가한다.
-                foreach (int hour in hours) dataList.Add(new AttendanceDataModel { bo_table = bo_table, wr_id = wr_id, datetime = datetime.AddHours(hour) });                
+                foreach (int hour in hours)
+                {
+                    var resultTime = datetime.AddHours(hour);
+
+                    // 공지에있는 날짜가 현재 날짜보다 이전이라면 년도를 1씩 증가시킨다.
+                   // if (dataList.Count > 13)
+                       // Console.WriteLine();
+
+                    var compareResult = DateTime.Compare(resultTime, DateTime.Now);
+                    resultTime = (compareResult > 0 || compareResult == 0) ? resultTime : resultTime.AddYears(1);
+                    dataList.Add(new AttendanceDataModel { bo_table = bo_table, wr_id = wr_id, datetime = resultTime });
+                }
             }
 
             return dataList;
@@ -189,6 +196,11 @@ namespace AutoAttendance_Core.Services
             }
 
             return responseText;
+        }
+
+        public void PrintLog(string message)
+        {
+            Console.WriteLine($"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm")}] : {message}");
         }
     }
 }
